@@ -1,15 +1,96 @@
 
-import React from "react";
-import { View, Text, StyleSheet, ScrollView, Platform, Pressable } from "react-native";
+import React, { useState, useEffect } from "react";
+import { View, Text, StyleSheet, ScrollView, Platform, Pressable, Alert } from "react-native";
 import { Stack } from "expo-router";
 import { IconSymbol } from "@/components/IconSymbol";
 import { colors, commonStyles } from "@/styles/commonStyles";
 import { useLanguage } from "@/contexts/LanguageContext";
 import LanguageSelector from "@/components/LanguageSelector";
+import EditableProfileField from "@/components/EditableProfileField";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+interface ProfileData {
+  fullName: string;
+  email: string;
+  phone: string;
+  bio: string;
+  city: string;
+  country: string;
+  dateOfBirth: string;
+  gender: string;
+  interests: string;
+  website: string;
+}
+
+const PROFILE_STORAGE_KEY = '@user_profile';
 
 export default function ProfileScreen() {
   console.log('ProfileScreen rendered');
   const { t, isRTL } = useLanguage();
+  const [editingField, setEditingField] = useState<string | null>(null);
+  const [profileData, setProfileData] = useState<ProfileData>({
+    fullName: 'John Doe',
+    email: 'john.doe@example.com',
+    phone: '+1 (555) 123-4567',
+    bio: 'Event enthusiast and tech lover. Always looking for new experiences and connections.',
+    city: 'New York',
+    country: 'United States',
+    dateOfBirth: '1990-01-15',
+    gender: 'male',
+    interests: 'Technology, Music, Sports, Food',
+    website: 'https://johndoe.com',
+  });
+
+  useEffect(() => {
+    loadProfileData();
+  }, []);
+
+  const loadProfileData = async () => {
+    try {
+      const savedProfile = await AsyncStorage.getItem(PROFILE_STORAGE_KEY);
+      if (savedProfile) {
+        const parsedProfile = JSON.parse(savedProfile);
+        console.log('Loaded profile data:', parsedProfile);
+        setProfileData(parsedProfile);
+      }
+    } catch (error) {
+      console.log('Error loading profile data:', error);
+    }
+  };
+
+  const saveProfileData = async (newData: ProfileData) => {
+    try {
+      await AsyncStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(newData));
+      console.log('Profile data saved successfully');
+      Alert.alert(t('profileUpdated'));
+    } catch (error) {
+      console.log('Error saving profile data:', error);
+    }
+  };
+
+  const handleFieldSave = (field: keyof ProfileData, value: string) => {
+    console.log('Updating field:', field, 'with value:', value);
+    const newProfileData = { ...profileData, [field]: value };
+    setProfileData(newProfileData);
+    saveProfileData(newProfileData);
+  };
+
+  const handleEditToggle = (field: string) => {
+    console.log('Toggling edit for field:', field);
+    setEditingField(editingField === field ? null : field);
+  };
+
+  const genderOptions = [
+    { label: t('male'), value: 'male' },
+    { label: t('female'), value: 'female' },
+    { label: t('other'), value: 'other' },
+    { label: t('preferNotToSay'), value: 'prefer_not_to_say' },
+  ];
+
+  const getGenderLabel = (value: string) => {
+    const option = genderOptions.find(opt => opt.value === value);
+    return option ? option.label : value;
+  };
 
   const profileSections = [
     {
@@ -31,7 +112,6 @@ export default function ProfileScreen() {
     {
       title: t('account'),
       items: [
-        { label: t('editProfile'), icon: 'person.circle', action: true },
         { label: t('privacySettings'), icon: 'lock', action: true },
         { label: t('helpSupport'), icon: 'questionmark.circle', action: true },
       ]
@@ -93,9 +173,104 @@ export default function ProfileScreen() {
           <View style={styles.avatarContainer}>
             <IconSymbol name="person.circle.fill" size={80} color={colors.primary} />
           </View>
-          <Text style={[styles.userName, isRTL && styles.rtlText]}>John Doe</Text>
-          <Text style={[styles.userEmail, isRTL && styles.rtlText]}>john.doe@example.com</Text>
-          <Text style={[styles.userLocation, isRTL && styles.rtlText]}>📍 New York, NY</Text>
+          <Text style={[styles.userName, isRTL && styles.rtlText]}>{profileData.fullName}</Text>
+          <Text style={[styles.userEmail, isRTL && styles.rtlText]}>{profileData.email}</Text>
+          <Text style={[styles.userLocation, isRTL && styles.rtlText]}>
+            📍 {profileData.city}, {profileData.country}
+          </Text>
+        </View>
+
+        {/* Editable Profile Fields Section */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, isRTL && styles.rtlText]}>{t('editProfile')}</Text>
+          <View style={styles.editableFieldsContainer}>
+            <EditableProfileField
+              label={t('fullName')}
+              value={profileData.fullName}
+              onSave={(value) => handleFieldSave('fullName', value)}
+              placeholder={t('enterFullName')}
+              isEditing={editingField === 'fullName'}
+              onEditToggle={() => handleEditToggle('fullName')}
+            />
+            
+            <EditableProfileField
+              label={t('email')}
+              value={profileData.email}
+              onSave={(value) => handleFieldSave('email', value)}
+              placeholder={t('enterEmail')}
+              keyboardType="email-address"
+              isEditing={editingField === 'email'}
+              onEditToggle={() => handleEditToggle('email')}
+            />
+            
+            <EditableProfileField
+              label={t('phone')}
+              value={profileData.phone}
+              onSave={(value) => handleFieldSave('phone', value)}
+              placeholder={t('enterPhone')}
+              keyboardType="phone-pad"
+              isEditing={editingField === 'phone'}
+              onEditToggle={() => handleEditToggle('phone')}
+            />
+            
+            <EditableProfileField
+              label={t('bio')}
+              value={profileData.bio}
+              onSave={(value) => handleFieldSave('bio', value)}
+              placeholder={t('enterBio')}
+              multiline={true}
+              isEditing={editingField === 'bio'}
+              onEditToggle={() => handleEditToggle('bio')}
+            />
+            
+            <EditableProfileField
+              label={t('city')}
+              value={profileData.city}
+              onSave={(value) => handleFieldSave('city', value)}
+              placeholder={t('enterCity')}
+              isEditing={editingField === 'city'}
+              onEditToggle={() => handleEditToggle('city')}
+            />
+            
+            <EditableProfileField
+              label={t('country')}
+              value={profileData.country}
+              onSave={(value) => handleFieldSave('country', value)}
+              placeholder={t('enterCountry')}
+              isEditing={editingField === 'country'}
+              onEditToggle={() => handleEditToggle('country')}
+            />
+            
+            <EditableProfileField
+              label={t('gender')}
+              value={getGenderLabel(profileData.gender)}
+              onSave={(value) => handleFieldSave('gender', value)}
+              placeholder={t('selectGender')}
+              isEditing={editingField === 'gender'}
+              onEditToggle={() => handleEditToggle('gender')}
+              options={genderOptions}
+            />
+            
+            <EditableProfileField
+              label={t('interests')}
+              value={profileData.interests}
+              onSave={(value) => handleFieldSave('interests', value)}
+              placeholder={t('interests')}
+              multiline={true}
+              isEditing={editingField === 'interests'}
+              onEditToggle={() => handleEditToggle('interests')}
+            />
+            
+            <EditableProfileField
+              label={t('website')}
+              value={profileData.website}
+              onSave={(value) => handleFieldSave('website', value)}
+              placeholder={t('enterWebsite')}
+              keyboardType="url"
+              isEditing={editingField === 'website'}
+              onEditToggle={() => handleEditToggle('website')}
+            />
+          </View>
         </View>
 
         {profileSections.map(renderSection)}
@@ -159,6 +334,12 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     borderRadius: 12,
     overflow: 'hidden',
+  },
+  editableFieldsContainer: {
+    backgroundColor: colors.background,
+    marginHorizontal: 16,
+    borderRadius: 12,
+    padding: 16,
   },
   listItem: {
     flexDirection: 'row',
