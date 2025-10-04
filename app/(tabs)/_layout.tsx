@@ -5,18 +5,21 @@ import FloatingTabBar, { TabBarItem } from '@/components/FloatingTabBar';
 import React from 'react';
 import { Platform } from 'react-native';
 import { colors } from '@/styles/commonStyles';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function TabLayout() {
+  const { t } = useLanguage();
+  
   const tabs: TabBarItem[] = [
     {
       name: '(home)',
-      title: 'Events',
+      title: t('events'),
       icon: 'calendar',
       route: '/(tabs)/(home)',
     },
     {
       name: 'profile',
-      title: 'Profile',
+      title: t('profile'),
       icon: 'person',
       route: '/(tabs)/profile',
     },
@@ -28,7 +31,7 @@ export default function TabLayout() {
         <NativeTabs.Screen
           name="(home)"
           options={{
-            title: 'Events',
+            title: t('events'),
             tabBarIcon: ({ color, size }) => (
               <Icon name="calendar" color={color} size={size} />
             ),
@@ -37,7 +40,7 @@ export default function TabLayout() {
         <NativeTabs.Screen
           name="profile"
           options={{
-            title: 'Profile',
+            title: t('profile'),
             tabBarIcon: ({ color, size }) => (
               <Icon name="person" color={color} size={size} />
             ),

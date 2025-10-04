@@ -5,10 +5,12 @@ import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { IconSymbol } from '@/components/IconSymbol';
 import { colors, commonStyles } from '@/styles/commonStyles';
 import { mockEvents } from '@/data/events';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function EventDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const { t, language, isRTL } = useLanguage();
   
   console.log('Event details screen for ID:', id);
   
@@ -17,14 +19,14 @@ export default function EventDetailsScreen() {
   if (!event) {
     return (
       <View style={[commonStyles.container, styles.errorContainer]}>
-        <Stack.Screen options={{ title: 'Event Not Found' }} />
+        <Stack.Screen options={{ title: t('eventNotFound') }} />
         <IconSymbol name="exclamationmark.triangle" size={48} color={colors.textSecondary} />
-        <Text style={styles.errorTitle}>Event Not Found</Text>
-        <Text style={styles.errorText}>
-          The event you're looking for doesn't exist or has been removed.
+        <Text style={[styles.errorTitle, isRTL && styles.rtlText]}>{t('eventNotFound')}</Text>
+        <Text style={[styles.errorText, isRTL && styles.rtlText]}>
+          {t('eventNotFoundText')}
         </Text>
         <Pressable style={styles.backButton} onPress={() => router.back()}>
-          <Text style={styles.backButtonText}>Go Back</Text>
+          <Text style={styles.backButtonText}>{t('goBack')}</Text>
         </Pressable>
       </View>
     );
@@ -32,7 +34,8 @@ export default function EventDetailsScreen() {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
+    const locale = language === 'he' ? 'he-IL' : 'en-US';
+    return date.toLocaleDateString(locale, { 
       weekday: 'long', 
       year: 'numeric',
       month: 'long', 
@@ -44,11 +47,27 @@ export default function EventDetailsScreen() {
     const [hours, minutes] = timeString.split(':');
     const date = new Date();
     date.setHours(parseInt(hours), parseInt(minutes));
-    return date.toLocaleTimeString('en-US', { 
+    const locale = language === 'he' ? 'he-IL' : 'en-US';
+    return date.toLocaleTimeString(locale, { 
       hour: 'numeric', 
       minute: '2-digit',
-      hour12: true 
+      hour12: language === 'en' 
     });
+  };
+
+  const getTranslatedCategory = (category: string) => {
+    const categoryMap: { [key: string]: string } = {
+      'Music': t('music'),
+      'Sports': t('sports'),
+      'Arts': t('arts'),
+      'Food': t('food'),
+      'Technology': t('technology'),
+      'Business': t('business'),
+      'Health': t('health'),
+      'Education': t('education'),
+      'Entertainment': t('entertainment'),
+    };
+    return categoryMap[category] || category;
   };
 
   return (
@@ -66,87 +85,87 @@ export default function EventDetailsScreen() {
         }} 
       />
       <ScrollView 
-        style={[commonStyles.container, { backgroundColor: colors.background }]}
+        style={[commonStyles.container, { backgroundColor: colors.background }, isRTL && styles.rtlContainer]}
         contentContainerStyle={styles.scrollContent}
       >
         <Image source={{ uri: event.image }} style={styles.heroImage} />
         
         <View style={styles.content}>
-          <View style={styles.header}>
-            <Text style={styles.title}>{event.name}</Text>
+          <View style={[styles.header, isRTL && styles.rtlHeader]}>
+            <Text style={[styles.title, isRTL && styles.rtlText]}>{event.name}</Text>
             <View style={styles.categoryBadge}>
-              <Text style={styles.categoryText}>{event.category}</Text>
+              <Text style={styles.categoryText}>{getTranslatedCategory(event.category)}</Text>
             </View>
           </View>
 
-          <Text style={styles.description}>{event.description}</Text>
+          <Text style={[styles.description, isRTL && styles.rtlText]}>{event.description}</Text>
 
           <View style={styles.detailsSection}>
-            <Text style={styles.sectionTitle}>Event Details</Text>
+            <Text style={[styles.sectionTitle, isRTL && styles.rtlText]}>{t('eventDetails')}</Text>
             
-            <View style={styles.detailItem}>
+            <View style={[styles.detailItem, isRTL && styles.rtlDetailItem]}>
               <View style={styles.detailIcon}>
                 <IconSymbol name="calendar" size={20} color={colors.primary} />
               </View>
               <View style={styles.detailContent}>
-                <Text style={styles.detailLabel}>Date & Time</Text>
-                <Text style={styles.detailValue}>
+                <Text style={[styles.detailLabel, isRTL && styles.rtlText]}>{t('dateTime')}</Text>
+                <Text style={[styles.detailValue, isRTL && styles.rtlText]}>
                   {formatDate(event.date)}
                 </Text>
-                <Text style={styles.detailValue}>
+                <Text style={[styles.detailValue, isRTL && styles.rtlText]}>
                   {formatTime(event.time)}
                 </Text>
               </View>
             </View>
 
-            <View style={styles.detailItem}>
+            <View style={[styles.detailItem, isRTL && styles.rtlDetailItem]}>
               <View style={styles.detailIcon}>
                 <IconSymbol name="location" size={20} color={colors.primary} />
               </View>
               <View style={styles.detailContent}>
-                <Text style={styles.detailLabel}>Location</Text>
-                <Text style={styles.detailValue}>{event.location.name}</Text>
-                <Text style={styles.detailSubValue}>{event.location.address}</Text>
-                <Text style={styles.detailSubValue}>{event.distance}km away</Text>
+                <Text style={[styles.detailLabel, isRTL && styles.rtlText]}>{t('location')}</Text>
+                <Text style={[styles.detailValue, isRTL && styles.rtlText]}>{event.location.name}</Text>
+                <Text style={[styles.detailSubValue, isRTL && styles.rtlText]}>{event.location.address}</Text>
+                <Text style={[styles.detailSubValue, isRTL && styles.rtlText]}>{event.distance}{t('kmAway')}</Text>
               </View>
             </View>
 
-            <View style={styles.detailItem}>
+            <View style={[styles.detailItem, isRTL && styles.rtlDetailItem]}>
               <View style={styles.detailIcon}>
                 <IconSymbol name="tag" size={20} color={colors.primary} />
               </View>
               <View style={styles.detailContent}>
-                <Text style={styles.detailLabel}>Price</Text>
-                <Text style={styles.priceValue}>{event.price}</Text>
+                <Text style={[styles.detailLabel, isRTL && styles.rtlText]}>{t('price')}</Text>
+                <Text style={styles.priceValue}>{event.price === 'Free' ? t('free') : event.price}</Text>
               </View>
             </View>
 
-            <View style={styles.detailItem}>
+            <View style={[styles.detailItem, isRTL && styles.rtlDetailItem]}>
               <View style={styles.detailIcon}>
                 <IconSymbol name="person" size={20} color={colors.primary} />
               </View>
               <View style={styles.detailContent}>
-                <Text style={styles.detailLabel}>Organizer</Text>
-                <Text style={styles.detailValue}>{event.organizer}</Text>
+                <Text style={[styles.detailLabel, isRTL && styles.rtlText]}>{t('organizer')}</Text>
+                <Text style={[styles.detailValue, isRTL && styles.rtlText]}>{event.organizer}</Text>
               </View>
             </View>
           </View>
 
-          <Text style={styles.mapNote}>
-            📍 Maps are not supported in Natively right now, but you can copy the address above to your preferred maps app.
+          <Text style={[styles.mapNote, isRTL && styles.rtlText]}>
+            {t('mapsNotSupported')}
           </Text>
         </View>
       </ScrollView>
 
-      <View style={styles.bottomBar}>
+      <View style={[styles.bottomBar, isRTL && styles.rtlBottomBar]}>
         <Pressable style={styles.actionButton}>
           <IconSymbol name="heart" size={20} color={colors.card} />
-          <Text style={styles.actionButtonText}>Save Event</Text>
+          <Text style={styles.actionButtonText}>{t('saveEvent')}</Text>
         </Pressable>
         <Pressable style={[styles.actionButton, styles.primaryButton]}>
           <IconSymbol name="calendar.badge.plus" size={20} color={colors.card} />
           <Text style={[styles.actionButtonText, styles.primaryButtonText]}>
-            Add to Calendar
+            {t('addToCalendar')}
           </Text>
         </Pressable>
       </View>
@@ -317,5 +336,21 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: colors.card,
+  },
+  rtlContainer: {
+    direction: 'rtl',
+  },
+  rtlHeader: {
+    flexDirection: 'row-reverse',
+  },
+  rtlDetailItem: {
+    flexDirection: 'row-reverse',
+  },
+  rtlBottomBar: {
+    flexDirection: 'row-reverse',
+  },
+  rtlText: {
+    textAlign: 'right',
+    writingDirection: 'rtl',
   },
 });

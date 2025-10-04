@@ -7,9 +7,11 @@ import { colors, commonStyles } from "@/styles/commonStyles";
 import { mockEvents, Event } from "@/data/events";
 import EventCard from "@/components/EventCard";
 import FilterBar from "@/components/FilterBar";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function HomeScreen() {
   const router = useRouter();
+  const { t, isRTL } = useLanguage();
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedDistance, setSelectedDistance] = useState(1000); // Any distance
 
@@ -57,9 +59,9 @@ export default function HomeScreen() {
   const renderEmpty = () => (
     <View style={styles.emptyContainer}>
       <IconSymbol name="calendar" size={48} color={colors.textSecondary} />
-      <Text style={styles.emptyTitle}>No events found</Text>
-      <Text style={styles.emptyText}>
-        Try adjusting your filters to see more events in your area.
+      <Text style={[styles.emptyTitle, isRTL && styles.rtlText]}>{t('noEventsFound')}</Text>
+      <Text style={[styles.emptyText, isRTL && styles.rtlText]}>
+        {t('noEventsText')}
       </Text>
     </View>
   );
@@ -69,7 +71,7 @@ export default function HomeScreen() {
       {Platform.OS === 'ios' && (
         <Stack.Screen
           options={{
-            title: "Local Events",
+            title: t('localEvents'),
             headerStyle: {
               backgroundColor: colors.card,
             },
@@ -80,7 +82,7 @@ export default function HomeScreen() {
           }}
         />
       )}
-      <View style={[commonStyles.container, { backgroundColor: colors.background }]}>
+      <View style={[commonStyles.container, { backgroundColor: colors.background }, isRTL && styles.rtlContainer]}>
         <FlatList
           data={filteredEvents}
           renderItem={renderEvent}
@@ -129,5 +131,12 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     textAlign: 'center',
     lineHeight: 22,
+  },
+  rtlContainer: {
+    direction: 'rtl',
+  },
+  rtlText: {
+    textAlign: 'right',
+    writingDirection: 'rtl',
   },
 });

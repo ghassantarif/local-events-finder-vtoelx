@@ -4,6 +4,7 @@ import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { IconSymbol } from './IconSymbol';
 import { colors } from '@/styles/commonStyles';
 import { categories, distanceOptions } from '@/data/events';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface FilterBarProps {
   selectedCategory: string;
@@ -18,10 +19,36 @@ export default function FilterBar({
   onCategoryChange,
   onDistanceChange,
 }: FilterBarProps) {
+  const { t, isRTL } = useLanguage();
+
+  const getTranslatedCategory = (category: string) => {
+    const categoryMap: { [key: string]: string } = {
+      'All': t('all'),
+      'Music': t('music'),
+      'Sports': t('sports'),
+      'Arts': t('arts'),
+      'Food': t('food'),
+      'Technology': t('technology'),
+      'Business': t('business'),
+      'Health': t('health'),
+      'Education': t('education'),
+      'Entertainment': t('entertainment'),
+    };
+    return categoryMap[category] || category;
+  };
+
+  const getTranslatedDistance = (option: typeof distanceOptions[0]) => {
+    if (option.value === 5) return t('5km');
+    if (option.value === 10) return t('10km');
+    if (option.value === 20) return t('20km');
+    if (option.value === 50) return t('50km');
+    if (option.value === 1000) return t('anyDistance');
+    return option.label;
+  };
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, isRTL && styles.rtlContainer]}>
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Categories</Text>
+        <Text style={[styles.sectionTitle, isRTL && styles.rtlText]}>{t('categories')}</Text>
         <ScrollView 
           horizontal 
           showsHorizontalScrollIndicator={false}
@@ -42,7 +69,7 @@ export default function FilterBar({
                   selectedCategory === category && styles.selectedChipText
                 ]}
               >
-                {category}
+                {getTranslatedCategory(category)}
               </Text>
             </Pressable>
           ))}
@@ -50,7 +77,7 @@ export default function FilterBar({
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Distance</Text>
+        <Text style={[styles.sectionTitle, isRTL && styles.rtlText]}>{t('distance')}</Text>
         <ScrollView 
           horizontal 
           showsHorizontalScrollIndicator={false}
@@ -76,7 +103,7 @@ export default function FilterBar({
                   selectedDistance === option.value && styles.selectedChipText
                 ]}
               >
-                {option.label}
+                {getTranslatedDistance(option)}
               </Text>
             </Pressable>
           ))}
@@ -130,5 +157,12 @@ const styles = StyleSheet.create({
   selectedChipText: {
     color: colors.primary,
     fontWeight: '600',
+  },
+  rtlContainer: {
+    direction: 'rtl',
+  },
+  rtlText: {
+    textAlign: 'right',
+    writingDirection: 'rtl',
   },
 });

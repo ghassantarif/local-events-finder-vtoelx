@@ -4,59 +4,64 @@ import { View, Text, StyleSheet, ScrollView, Platform, Pressable } from "react-n
 import { Stack } from "expo-router";
 import { IconSymbol } from "@/components/IconSymbol";
 import { colors, commonStyles } from "@/styles/commonStyles";
+import { useLanguage } from "@/contexts/LanguageContext";
+import LanguageSelector from "@/components/LanguageSelector";
 
 export default function ProfileScreen() {
   console.log('ProfileScreen rendered');
+  const { t, isRTL } = useLanguage();
 
   const profileSections = [
     {
-      title: 'My Events',
+      title: t('myEvents'),
       items: [
-        { label: 'Saved Events', icon: 'heart', value: '12' },
-        { label: 'Attended Events', icon: 'checkmark.circle', value: '8' },
-        { label: 'My Reviews', icon: 'star', value: '5' },
+        { label: t('savedEvents'), icon: 'heart', value: '12' },
+        { label: t('attendedEvents'), icon: 'checkmark.circle', value: '8' },
+        { label: t('myReviews'), icon: 'star', value: '5' },
       ]
     },
     {
-      title: 'Preferences',
+      title: t('preferences'),
       items: [
-        { label: 'Notification Settings', icon: 'bell', action: true },
-        { label: 'Location Settings', icon: 'location', action: true },
-        { label: 'Category Preferences', icon: 'tag', action: true },
+        { label: t('notificationSettings'), icon: 'bell', action: true },
+        { label: t('locationSettings'), icon: 'location', action: true },
+        { label: t('categoryPreferences'), icon: 'tag', action: true },
       ]
     },
     {
-      title: 'Account',
+      title: t('account'),
       items: [
-        { label: 'Edit Profile', icon: 'person.circle', action: true },
-        { label: 'Privacy Settings', icon: 'lock', action: true },
-        { label: 'Help & Support', icon: 'questionmark.circle', action: true },
+        { label: t('editProfile'), icon: 'person.circle', action: true },
+        { label: t('privacySettings'), icon: 'lock', action: true },
+        { label: t('helpSupport'), icon: 'questionmark.circle', action: true },
       ]
     }
   ];
 
   const renderSection = (section: typeof profileSections[0]) => (
     <View key={section.title} style={styles.section}>
-      <Text style={styles.sectionTitle}>{section.title}</Text>
+      <Text style={[styles.sectionTitle, isRTL && styles.rtlText]}>{section.title}</Text>
       <View style={styles.sectionContent}>
         {section.items.map((item, index) => (
-          <Pressable key={item.label} style={styles.listItem}>
-            <View style={styles.itemLeft}>
+          <Pressable key={item.label} style={[styles.listItem, isRTL && styles.rtlListItem]}>
+            <View style={[styles.itemLeft, isRTL && styles.rtlItemLeft]}>
               <View style={styles.iconContainer}>
                 <IconSymbol name={item.icon} size={20} color={colors.primary} />
               </View>
-              <Text style={styles.itemLabel}>{item.label}</Text>
+              <Text style={[styles.itemLabel, isRTL && styles.rtlText]}>{item.label}</Text>
             </View>
-            <View style={styles.itemRight}>
+            <View style={[styles.itemRight, isRTL && styles.rtlItemRight]}>
               {item.value && (
                 <Text style={styles.itemValue}>{item.value}</Text>
               )}
               {item.action && (
-                <IconSymbol name="chevron.right" size={16} color={colors.textSecondary} />
+                <IconSymbol name={isRTL ? "chevron.left" : "chevron.right"} size={16} color={colors.textSecondary} />
               )}
             </View>
           </Pressable>
         ))}
+        {/* Add language selector to preferences section */}
+        {section.title === t('preferences') && <LanguageSelector />}
       </View>
     </View>
   );
@@ -66,7 +71,7 @@ export default function ProfileScreen() {
       {Platform.OS === 'ios' && (
         <Stack.Screen
           options={{
-            title: "Profile",
+            title: t('profile'),
             headerStyle: {
               backgroundColor: colors.card,
             },
@@ -78,7 +83,7 @@ export default function ProfileScreen() {
         />
       )}
       <ScrollView 
-        style={[commonStyles.container, { backgroundColor: colors.background }]}
+        style={[commonStyles.container, { backgroundColor: colors.background }, isRTL && styles.rtlContainer]}
         contentContainerStyle={[
           styles.scrollContent,
           Platform.OS !== 'ios' && styles.scrollContentWithTabBar
@@ -88,20 +93,20 @@ export default function ProfileScreen() {
           <View style={styles.avatarContainer}>
             <IconSymbol name="person.circle.fill" size={80} color={colors.primary} />
           </View>
-          <Text style={styles.userName}>John Doe</Text>
-          <Text style={styles.userEmail}>john.doe@example.com</Text>
-          <Text style={styles.userLocation}>📍 New York, NY</Text>
+          <Text style={[styles.userName, isRTL && styles.rtlText]}>John Doe</Text>
+          <Text style={[styles.userEmail, isRTL && styles.rtlText]}>john.doe@example.com</Text>
+          <Text style={[styles.userLocation, isRTL && styles.rtlText]}>📍 New York, NY</Text>
         </View>
 
         {profileSections.map(renderSection)}
 
         <View style={styles.footer}>
-          <Pressable style={styles.logoutButton}>
+          <Pressable style={[styles.logoutButton, isRTL && styles.rtlLogoutButton]}>
             <IconSymbol name="arrow.right.square" size={20} color={colors.secondary} />
-            <Text style={styles.logoutText}>Sign Out</Text>
+            <Text style={styles.logoutText}>{t('signOut')}</Text>
           </Pressable>
           
-          <Text style={styles.versionText}>Version 1.0.0</Text>
+          <Text style={[styles.versionText, isRTL && styles.rtlText]}>{t('version')} 1.0.0</Text>
         </View>
       </ScrollView>
     </>
@@ -218,5 +223,24 @@ const styles = StyleSheet.create({
   versionText: {
     fontSize: 12,
     color: colors.textSecondary,
+  },
+  rtlContainer: {
+    direction: 'rtl',
+  },
+  rtlListItem: {
+    flexDirection: 'row-reverse',
+  },
+  rtlItemLeft: {
+    flexDirection: 'row-reverse',
+  },
+  rtlItemRight: {
+    flexDirection: 'row-reverse',
+  },
+  rtlLogoutButton: {
+    flexDirection: 'row-reverse',
+  },
+  rtlText: {
+    textAlign: 'right',
+    writingDirection: 'rtl',
   },
 });
