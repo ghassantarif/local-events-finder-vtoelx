@@ -1,79 +1,67 @@
-import React from "react";
-import { Stack, Link } from "expo-router";
-import { FlatList, Pressable, StyleSheet, View, Text, Alert, Platform } from "react-native";
-import { IconSymbol } from "@/components/IconSymbol";
-import { GlassView } from "expo-glass-effect";
-import { useTheme } from "@react-navigation/native";
 
-const ICON_COLOR = "#007AFF";
+import React, { useState, useMemo } from "react";
+import { Stack, useRouter } from "expo-router";
+import { FlatList, StyleSheet, View, Text, Platform } from "react-native";
+import { IconSymbol } from "@/components/IconSymbol";
+import { colors, commonStyles } from "@/styles/commonStyles";
+import { mockEvents, Event } from "@/data/events";
+import EventCard from "@/components/EventCard";
+import FilterBar from "@/components/FilterBar";
 
 export default function HomeScreen() {
-  const theme = useTheme();
-  const modalDemos = [
-    {
-      title: "Standard Modal",
-      description: "Full screen modal presentation",
-      route: "/modal",
-      color: "#007AFF",
-    },
-    {
-      title: "Form Sheet",
-      description: "Bottom sheet with detents and grabber",
-      route: "/formsheet",
-      color: "#34C759",
-    },
-    {
-      title: "Transparent Modal",
-      description: "Overlay without obscuring background",
-      route: "/transparent-modal",
-      color: "#FF9500",
+  const router = useRouter();
+  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [selectedDistance, setSelectedDistance] = useState(1000); // Any distance
+
+  console.log('HomeScreen rendered with filters:', { selectedCategory, selectedDistance });
+
+  const filteredEvents = useMemo(() => {
+    let filtered = mockEvents;
+
+    // Filter by category
+    if (selectedCategory !== 'All') {
+      filtered = filtered.filter(event => event.category === selectedCategory);
     }
-  ];
 
-  const renderModalDemo = ({ item }: { item: (typeof modalDemos)[0] }) => (
-    <GlassView style={[
-      styles.demoCard,
-      Platform.OS !== 'ios' && { backgroundColor: theme.dark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }
-    ]} glassEffectStyle="regular">
-      <View style={[styles.demoIcon, { backgroundColor: item.color }]}>
-        <IconSymbol name="square.grid.3x3" color="white" size={24} />
-      </View>
-      <View style={styles.demoContent}>
-        <Text style={[styles.demoTitle, { color: theme.colors.text }]}>{item.title}</Text>
-        <Text style={[styles.demoDescription, { color: theme.dark ? '#98989D' : '#666' }]}>{item.description}</Text>
-      </View>
-      <Link href={item.route as any} asChild>
-        <Pressable>
-          <GlassView style={[
-            styles.tryButton,
-            Platform.OS !== 'ios' && { backgroundColor: theme.dark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.08)' }
-          ]} glassEffectStyle="clear">
-            <Text style={[styles.tryButtonText, { color: theme.colors.primary }]}>Try It</Text>
-          </GlassView>
-        </Pressable>
-      </Link>
-    </GlassView>
+    // Filter by distance
+    filtered = filtered.filter(event => event.distance <= selectedDistance);
+
+    // Sort by distance (closest first)
+    filtered.sort((a, b) => a.distance - b.distance);
+
+    console.log('Filtered events count:', filtered.length);
+    return filtered;
+  }, [selectedCategory, selectedDistance]);
+
+  const handleEventPress = (event: Event) => {
+    console.log('Event pressed:', event.name);
+    router.push(`/event/${event.id}`);
+  };
+
+  const renderEvent = ({ item }: { item: Event }) => (
+    <EventCard 
+      event={item} 
+      onPress={() => handleEventPress(item)} 
+    />
   );
 
-  const renderHeaderRight = () => (
-    <Pressable
-      onPress={() => Alert.alert("Not Implemented", "This feature is not implemented yet")}
-      style={styles.headerButtonContainer}
-    >
-      <IconSymbol name="plus" color={theme.colors.primary} />
-    </Pressable>
+  const renderHeader = () => (
+    <FilterBar
+      selectedCategory={selectedCategory}
+      selectedDistance={selectedDistance}
+      onCategoryChange={setSelectedCategory}
+      onDistanceChange={setSelectedDistance}
+    />
   );
 
-  const renderHeaderLeft = () => (
-    <Pressable
-      onPress={() => Alert.alert("Not Implemented", "This feature is not implemented yet")}
-      style={styles.headerButtonContainer}
-    >
-      <IconSymbol
-        name="gear"
-        color={theme.colors.primary}
-      />
-    </Pressable>
+  const renderEmpty = () => (
+    <View style={styles.emptyContainer}>
+      <IconSymbol name="calendar" size={48} color={colors.textSecondary} />
+      <Text style={styles.emptyTitle}>No events found</Text>
+      <Text style={styles.emptyText}>
+        Try adjusting your filters to see more events in your area.
+      </Text>
+    </View>
   );
 
   return (
@@ -81,23 +69,31 @@ export default function HomeScreen() {
       {Platform.OS === 'ios' && (
         <Stack.Screen
           options={{
-            title: "Building the app...",
-            headerRight: renderHeaderRight,
-            headerLeft: renderHeaderLeft,
+            title: "Local Events",
+            headerStyle: {
+              backgroundColor: colors.card,
+            },
+            headerTintColor: colors.text,
+            headerTitleStyle: {
+              fontWeight: '600',
+            },
           }}
         />
       )}
-      <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <View style={[commonStyles.container, { backgroundColor: colors.background }]}>
         <FlatList
-          data={modalDemos}
-          renderItem={renderModalDemo}
-          keyExtractor={(item) => item.route}
+          data={filteredEvents}
+          renderItem={renderEvent}
+          keyExtractor={(item) => item.id}
+          ListHeaderComponent={renderHeader}
+          ListEmptyComponent={renderEmpty}
           contentContainerStyle={[
             styles.listContainer,
-            Platform.OS !== 'ios' && styles.listContainerWithTabBar
+            Platform.OS !== 'ios' && styles.listContainerWithTabBar,
+            filteredEvents.length === 0 && styles.emptyListContainer
           ]}
-          contentInsetAdjustmentBehavior="automatic"
           showsVerticalScrollIndicator={false}
+          stickyHeaderIndices={[0]}
         />
       </View>
     </>
@@ -105,57 +101,33 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    // backgroundColor handled dynamically
-  },
   listContainer: {
-    paddingVertical: 16,
-    paddingHorizontal: 16,
+    paddingBottom: 16,
   },
   listContainerWithTabBar: {
     paddingBottom: 100, // Extra padding for floating tab bar
   },
-  demoCard: {
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
+  emptyListContainer: {
+    flexGrow: 1,
   },
-  demoIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+  emptyContainer: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 16,
+    paddingHorizontal: 32,
+    paddingTop: 60,
   },
-  demoContent: {
-    flex: 1,
-  },
-  demoTitle: {
-    fontSize: 18,
+  emptyTitle: {
+    fontSize: 20,
     fontWeight: '600',
-    marginBottom: 4,
-    // color handled dynamically
+    color: colors.text,
+    marginTop: 16,
+    marginBottom: 8,
   },
-  demoDescription: {
-    fontSize: 14,
-    lineHeight: 18,
-    // color handled dynamically
-  },
-  headerButtonContainer: {
-    padding: 6,
-  },
-  tryButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 6,
-  },
-  tryButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    // color handled dynamically
+  emptyText: {
+    fontSize: 16,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 22,
   },
 });
